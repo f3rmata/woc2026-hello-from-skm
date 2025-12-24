@@ -10,7 +10,7 @@ use kernel::prelude::*;
 
 module! {
     type: RustLkmTemplate,
-    name: "woc2026-hello-from-rkm",
+    name: "woc2026_hello_from_rkm",
     authors: ["fermata"],
     description: "RKM implements a simple rust kernel module",
     license: "GPL",
@@ -19,7 +19,7 @@ module! {
 struct RustLkmTemplate(&'static str);
 
 impl kernel::Module for RustLkmTemplate {
-    fn init(_name: &'static CStr, _module: &'static ThisModule) -> Result<Self> {
+    fn init(_module: &'static ThisModule) -> Result<Self> {
         let message: &'static str = "Hello World!";
         test();
         pr_info!("Rust LKM Template (init)\n");

@@ -29,8 +29,19 @@ check_dependencies() {
 }
 
 setup_rust_in_kernel() {
-	rustup override set "$(scripts/min-tool-version.sh rustc)"
+	local rust_version
+	rust_version="$(scripts/min-tool-version.sh rustc)"
+	
+	echo "Setting up Rust $rust_version for kernel..."
+	# 为内核目录设置 override
+	rustup override set "$rust_version"	
+	# 为项目根目录也设置相同的 override（用于 out-of-tree 模块）
+	
+	echo "Setting Rust override for project root..."
+	popd >/dev/null
+	rustup override set "$rust_version"
 	rustup component add rust-src rustfmt clippy
+	pushd "$KERNEL" >/dev/null
 }
 
 setup_kernel() {
@@ -43,6 +54,8 @@ setup_kernel() {
 	yes "" | make LLVM=1 CLIPPY=1 olddefconfig || [ $? -eq 141 ]
 	make LLVM=1 CLIPPY=1 rust-analyzer
 	popd >/dev/null
+	# 为 out-of-tree 模块生成 rust-project.json
+	make -C "$KERNEL" M="$CURRENT_DIR/src" LLVM=1 rust-analyzer
 }
 
 setup_busybox() {

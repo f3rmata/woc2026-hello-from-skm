@@ -12,7 +12,7 @@ ROOTFS := $(BDIR)/rootfs.img
 BUSYBOX_BIN := $(BDIR)/busybox
 BUSYBOX_INSTALL := $(BDIR)/_install
 
-.PHONY: all run build setup clean rebuild kernel busybox rootfs config-rootfs
+.PHONY: all run build setup clean rebuild kernel busybox rootfs module module-clean module-install
 
 all: run
 
@@ -47,6 +47,29 @@ $(ROOTFS): $(BUSYBOX_BIN)
 	@echo "Packing rootfs image..."
 	@cd $(BDIR)/_install && find . | cpio -o -H newc | gzip > ../rootfs.img
 
+# Rust 模块相关变量
+MODULE_NAME := woc2026_hello_from_rkm
+MODULE_SRC := src
+MODULE_KO := $(MODULE_SRC)/$(MODULE_NAME).ko
+
+# 构建 Rust 模块
+module: kernel
+	@echo "Preparing Rust environment..."
+	@$(MAKE) -C $(KDIR) LLVM=1 CLIPPY=1 prepare
+	@echo "Building Rust kernel module..."
+	$(MAKE) -C $(KDIR) M=$(PWD)/$(MODULE_SRC) LLVM=1 modules
+
+# 清理模块
+module-clean:
+	@echo "Cleaning Rust module..."
+	$(MAKE) -C $(KDIR) M=$(PWD)/$(MODULE_SRC) clean
+
+# 安装模块到 rootfs
+module-install: module $(BUSYBOX_INSTALL)
+	@echo "Installing module to rootfs..."
+	@mkdir -p $(BUSYBOX_INSTALL)/lib/modules
+	@cp $(MODULE_KO) $(BUSYBOX_INSTALL)/lib/modules/
+
 # 运行：确保构建产物存在
 run: build
 	@echo "Starting QEMU..."
@@ -55,13 +78,22 @@ run: build
 setup:
 	SUBMODULE_DEPTH=$(SUBMODULE_DEPTH) scripts/setup.sh
 
+# 检查 Rust 工具链版本和可用性
+check-rust:
+	@echo "Checking Rust toolchain..."
+	@rustc --version || (echo "ERROR: rustc not found. Please install Rust." && exit 1)
+	@rustup --version || (echo "ERROR: rustup not found. Please install rustup." && exit 1)
+	@echo "Checking kernel Rust requirements..."
+	@cd $(KDIR) && scripts/min-tool-version.sh rustc && make LLVM=1 rustavailable
+	@echo "✓ Rust toolchain is ready"
+
 # 清理构建产物
 clean-build:
 	@echo "Cleaning build artifacts..."
 	@rm -f $(BZIMAGE) $(ROOTFS)
 	@rm -rf $(BUSYBOX_INSTALL)
 
-clean: clean-build
+clean: clean-build module-clean
 	@echo "Cleaning kernel..."
 	@$(MAKE) -C $(KDIR) clean 2>/dev/null || true
 	@echo "Cleaning busybox..."

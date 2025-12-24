@@ -12,8 +12,12 @@ build/
 *.so
 *.dylib
 *.dll
+*.mod
+*.cmd
+*.o.d
 
 # IDE 和编辑器配置
+rust-project.json
 .vscode/
 .idea/
 *.swp
