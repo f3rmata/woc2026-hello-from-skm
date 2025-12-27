@@ -3,6 +3,7 @@ target/
 **/*.rs.bk
 *.pdb
 build/
+magic/
 
 # 编译生成的二进制文件
 *.bin
@@ -19,6 +20,7 @@ build/
 *.symvers
 *.ko
 *.mod.c
+!magic.ko
 
 # IDE 和编辑器配置
 rust-project.json

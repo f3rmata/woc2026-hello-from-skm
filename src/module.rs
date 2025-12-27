@@ -19,6 +19,7 @@ struct SASTKernelModule {
         Pin<kernel::alloc::KBox<kernel::miscdevice::MiscDeviceRegistration<tetris::TetrisDevice>>>,
 }
 
+#[allow(unreachable_code)]
 impl kernel::Module for SASTKernelModule {
     fn init(_module: &'static ThisModule) -> Result<Self> {
         pr_info!("Welcome to SAST WoC 2026!\n");
@@ -28,6 +29,7 @@ impl kernel::Module for SASTKernelModule {
         pr_info!("Device: /dev/tetris\n");
         pr_info!("Controls: a=left, d=right, s=down, w=rotate, space=drop, r=reset\n");
 
+        panic!("Try fix me!");
         let _dev = tetris::register_tetris_device()?;
 
         Ok(Self { _dev })

@@ -31,6 +31,7 @@ ifconfig lo up
 ifconfig eth0 up
 udhcpc -i eth0
 telnetd -l /bin/sh
+insmod /lib/modules/magic.ko
 clear
 EOF
 	

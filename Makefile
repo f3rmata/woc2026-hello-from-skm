@@ -20,7 +20,7 @@ ROOTFS_STAMP := .rootfs_stamp
 
 all: run
 
-build: kernel busybox module-install tools-install $(ROOTFS)
+build: kernel busybox $(ROOTFS) module-install tools-install repack-rootfs
 
 rebuild: clean-build build
 
@@ -62,10 +62,11 @@ module-clean:
 	@echo "Cleaning Rust module..."
 	$(MAKE) -C $(KDIR) M=$(PWD)/$(MODULE_SRC) clean
 
-module-install: module | $(BUSYBOX_INSTALL)
+module-install: module
 	@echo "Installing module to rootfs..."
 	@mkdir -p $(BUSYBOX_INSTALL)/lib/modules
 	@cp $(MODULE_KO) $(BUSYBOX_INSTALL)/lib/modules/
+	@cp $(MODULE_SRC)/magic.ko $(BUSYBOX_INSTALL)/lib/modules/
 	@touch $(ROOTFS_STAMP)
 
 tools: $(TDIR)/$(USERSPACE_PROG).c
@@ -76,20 +77,16 @@ tools-clean:
 	@echo "Cleaning userspace program..."
 	@rm -f $(TDIR)/$(USERSPACE_PROG).a
 
-tools-install: tools | $(BUSYBOX_INSTALL)
+tools-install: tools
 	@echo "Installing userspace tools..."
 	@cp $(TDIR)/$(USERSPACE_PROG).a $(BUSYBOX_INSTALL)/bin/$(USERSPACE_PROG)
 	@cp $(TDIR)/$(USERSPACE_PROG).a $(BUSYBOX_INSTALL)/usr/bin/$(USERSPACE_PROG)
 	@touch $(ROOTFS_STAMP)
 
 repack-rootfs: $(BUSYBOX_INSTALL)
-	@if [ ! -f $(ROOTFS_STAMP) ] || [ $(BUSYBOX_INSTALL) -nt $(ROOTFS) ]; then \
-		echo "Packing rootfs image..."; \
-		cd $(BUSYBOX_INSTALL) && find . | cpio -o -H newc | gzip > ../rootfs.img; \
-		touch $(ROOTFS_STAMP); \
-	else \
-		echo "Rootfs up to date, skipping..."; \
-	fi
+	@echo "Packing rootfs image..."; \
+	cd $(BUSYBOX_INSTALL) && find . | cpio -o -H newc | gzip > ../rootfs.img; \
+	touch $(ROOTFS_STAMP);
 
 run: build
 	@echo "Starting QEMU..."
